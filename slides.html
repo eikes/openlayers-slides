@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8"/>
+    <title>OpenLayers Talk by Eike Send</title>
+    <style type="text/css">
+      html, body, #mapDiv {
+          width: 100%;
+          height: 100%;
+          margin: 0;
+      }
+      #slide {
+        font-family: sans-serif;
+      }
+      #outer {
+        min-height:480px;
+      }
+      p, h3 {
+        margin: 0;
+        padding: 0;
+        width: 480px;
+      }
+      h3 {
+        font-size: 50px;
+      }
+      ul {
+        margin: 0;
+      }
+      li, p {
+        font-size: 40px;
+      }
+      li {
+        margin-left:1em;
+      }
+      p.station {
+        font-size: 14px;
+        margin-bottom: 14px;
+      }
+      body div.olControlMousePosition {
+        font-size: 24 px;
+        font-weight: bold;
+        background-color: white;
+      }
+    </style>
+    <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
+    <script>
+
+      // Because I'm used to it, I prefer my coordinates in Lon/Lat
+      // which I can then transform to the spherical mercator projection
+      var projectionSphericalMercator = new OpenLayers.Projection("EPSG:900913");
+      var projectionWSG84 = new OpenLayers.Projection("EPSG:4326");
+
+      // Little Helper function to get a transformed point
+      function getPoint(Lon,Lat) {
+        return new OpenLayers.LonLat(Lon,Lat).transform(projectionWSG84, projectionSphericalMercator);
+      }
+
+      // The slide object array, I think you get it
+      var slides = [
+        { name: "Warschauer Straße",
+          title: "OpenLayers",
+          text: "A FOSS JS-library for displaying maps and geodata on html pages<br><br>I'm Eike.Se/nd <br>twitter.com/eikes<br>SpreeBytes.net",
+          coords: getPoint(13.45146, 52.50618)},
+          
+        { name: "Schlesisches Tor",
+          title: "Components",
+          text: "*Maps, Layers & Controls *Formats *Vectors *API *Projections *Documentation *Deploying",
+          coords: getPoint(13.44143, 52.50076)},
+          
+        { name: "Görlitzer Bahnhof",
+          title: "Map",
+          text: "*provides basic functionality *needs base layer *needs controls",
+          coords: getPoint(13.42792, 52.49922)},
+          
+        { name: "Kottbusser Tor",
+          title: "Layers",
+          text: "*One base layer *Additional overlays *Layers can show <ul>*Raster map (OSM, Google, WMS) *Images *Popups *Vectors",
+          coords: getPoint(13.41831, 52.49903)},
+          
+        { name: "Prinzenstraße",
+          title: "Controls",
+          text: "*Pan and Zoom *Attribution *Coordinates *OverviewMap *Scale *Permalink & ArgParser *Keyboard *Feature Drawing",
+          coords: getPoint(13.40614, 52.49828)},
+          
+        { name: "Hallesches Tor",
+          title: "Geo Data Formats",
+          text: "*GML (Geographic Markup Language) *KML *OSM's native XML format *Web Feature Service (WFS) *JSON & GeoJSON *Atom, RSS & GeoRSS",
+          coords: getPoint(13.39048, 52.49778)},
+          
+        { name: "Möckernbrücke",
+          title: "Vectors",
+          text: "*Points, lines & polygons *Style: size, color, width, line, etc *Filter for styling *Uses SVG, VML, or Canvas",
+          coords: getPoint(13.38293, 52.49908)},
+          
+        { name: "Gleisdreieck",
+          title: "API",
+          text: "Roll your own: *raster map provider *controls *format parser *filter",
+          coords: getPoint(13.37413, 52.49945)},
+          
+        { name: "Kurfürstenstraße",
+          title: "Coordinates",
+          text: 'EPSG-4326 = World Geodetic System 1984 <br><img src="http://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Geographic_coordinates_sphere.svg/250px-Geographic_coordinates_sphere.svg.png">',
+          coords: getPoint(13.36226, 52.49988)},
+          
+        { name: "Nollendorfplatz",
+          title: "Projections",
+          text: 'Spherical mercator projection<br><img src="http://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/MercNormSph.png/250px-MercNormSph.png">',
+          coords: getPoint(13.35369, 52.49950)},
+          
+        { name: "Wittenbergplatz",
+          title: "Documentation",
+          text: "*Lack thereof *trac.openlayers.org/wiki/ *docs.openlayers.org/ *Read the sourcecode *Book: opensourcepress.de",
+          coords: getPoint(13.34299, 52.50178)},
+          
+        { name: "Kurfürstendamm",
+          title: "Deployment, Bits & Pieces",
+          text: "*Byte aware developers can customize the build *AJAX abstraction *Utils",
+          coords: getPoint(13.33132, 52.50380)},
+          
+        { name: "Uhlandstraße",
+          title: "This train terminates here.",
+          text: "*Thank you for your attention! *Questions? ",
+          coords: getPoint(13.32682, 52.50285)}
+      ];
+
+      slideTemplate = '<div id="outer"><h3>${title}</h3><p class="station">${name}</p><p>${text}</p></div>';
+      var curSlide = 0;
+      var popup = new OpenLayers.Popup.FramedCloud();
+      var train;
+      var trainIcon = new OpenLayers.Icon("http://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Train_icon.svg/200px-Train_icon.svg.png", new OpenLayers.Size(200,231), new OpenLayers.Pixel(-50,-110));
+      
+      // provides the functionality to show slides
+      function showSlide(i) {
+        // first check if it's the vector slide (6) which gets special attention
+        if (i == 6) showVectors();
+        if (i == 7 || i == 5) hideVectors();
+        // remove old slide elements
+        map.removePopup(popup);
+        layerMarkers.removeMarker(train);
+        // move map to new pos
+        map.panTo(slides[i].coords);
+        // add slide elements
+        train = new OpenLayers.Marker(slides[i].coords, trainIcon);
+        layerMarkers.addMarker(train);
+        // render markup from slides array and display
+        slides[i].text = slides[i].text.replace(/\*/g,"<li>");
+        markup = OpenLayers.String.format(slideTemplate, slides[i]);
+        popup = new OpenLayers.Popup.FramedCloud("slide", slides[i].coords, new OpenLayers.Size(550,550), markup, null, true);
+        // add the popup a little later so the panTo operation can finish, because the popup causes more paning
+        window.setTimeout("map.addPopup(popup)",500);
+      }
+
+      // my custom keyboard event handler
+      function keyboardEvent(event) {
+        // left key
+        if (event.keyCode == 37 && curSlide < slides.length-1) {
+          showSlide(++curSlide);
+        }
+        // right key
+        if (event.keyCode == 39 && curSlide > 0) {
+          showSlide(--curSlide);
+        }
+      }
+      
+      ///////////////////////////////////////////////////////////////////
+      // This about the vectors demo:
+      ///////////////////////////////////////////////////////////////////
+      var features;
+      var osmformatOptionsIn = {
+          'internalProjection': projectionSphericalMercator,
+          'externalProjection': projectionWSG84,
+          'featureType': 'feature'
+        };
+      var osmformat = new OpenLayers.Format.OSM(osmformatOptionsIn);
+      // This function is called before the features are added
+      function style_osm_feature(feature) {
+        feature.style = OpenLayers.Feature.Vector.style['default'];
+        feature.style.strokeColor = "#FF0000";
+        feature.style.fillColor = "#F3F3FF";
+        if (feature.attributes.highway == "footway") {
+          feature.style.strokeColor = "#0000FF";
+        }
+      }
+      // Callback for the asynchronous GET request
+      function requesthandler(request) {
+        features = osmformat.read(request.responseText);
+        vectors.addFeatures(features);
+      }
+      // called from showslide on entering the vector slide
+      function showVectors() {
+        // The data I got from http://osmxapi.hypercube.telascience.org/api/0.6/way[highway][bbox=13.37,52.496,13.395,52.502]
+        // for more info see http://wiki.openstreetmap.org/wiki/Osmxapi
+        var request = OpenLayers.Request.GET({
+            url: "data.osm",
+            callback: requesthandler
+        });
+        document.getElementById(mapnik.id).style.opacity = "0";
+      }
+      // called from showslide on leaving the vector slide
+      function hideVectors() {
+        document.getElementById(mapnik.id).style.opacity = "1";
+        vectors.removeFeatures(features);
+      }
+      ///////////////////////////////////////////////////////////////////
+      // End of vectors demo stuff
+      ///////////////////////////////////////////////////////////////////
+      
+      var mapnik; // global so i can access it from showVectors & hideVectors
+      function init() {
+        var mapOptions = {
+          projection : projectionSphericalMercator,
+          displayProjection : projectionWSG84
+        };
+        map = new OpenLayers.Map("mapDiv", mapOptions);
+
+        // This control shows the coordinates in the lower right corner
+        var coordiantes = new OpenLayers.Control.MousePosition();
+        map.addControl(coordiantes);
+
+        // This is the invisible keyboard control which I alter to control the slides
+        var kb = new OpenLayers.Control.KeyboardDefaults();
+        kb.defaultKeyPress = keyboardEvent;
+        map.addControl(kb);
+        
+        // This is the OpenStreetMap tiles layer, it's by default a base layer
+        mapnik = new OpenLayers.Layer.OSM();
+        map.addLayer(mapnik);
+        
+        // This is the vectors layer
+        vectors = new OpenLayers.Layer.Vector("Vector Layer");
+        // Here I add a filter
+        vectors.preFeatureInsert = style_osm_feature;
+        map.addLayer(vectors);
+
+        // The marker layer I use for the train icon
+        // it might be better to use a Feature
+        layerMarkers = new OpenLayers.Layer.Markers("Markers Layer");
+        map.addLayer(layerMarkers);
+        
+        // The map is not shown unless setCenter or zoomToMaxExtent is called
+        map.setCenter(slides[0].coords, 16);
+        
+        // finally show the first slide
+        showSlide(curSlide);
+      }
+    </script>
+  </head>
+  <body onload="init();">
+    <div id="mapDiv"></div>
+  </body>
+</html>
+
