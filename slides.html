@@ -56,10 +56,11 @@
       }
 
       // The slide object array, I think you get it
+      // * will become <li> element, @example.com will become a link
       var slides = [
         { name: "Warschauer Straße",
           title: "OpenLayers",
-          text: "A FOSS JS-library for displaying maps and geodata on html pages<br><br>I'm Eike.Se/nd <br>twitter.com/eikes<br>SpreeBytes.net",
+          text: 'A FOSS JS-library for displaying maps and geodata on html pages<br><br>My name is @Eike.Se/nd <br>@twitter.com/eikes <br>@SpreeBytes.net ',
           coords: getPoint(13.45146, 52.50618)},
           
         { name: "Schlesisches Tor",
@@ -144,6 +145,7 @@
         layerMarkers.addMarker(train);
         // render markup from slides array and display
         slides[i].text = slides[i].text.replace(/\*/g,"<li>");
+        slides[i].text = slides[i].text.replace(/@(\S*)/g,'<a href="http://$1" target="_blank">$1<\/a>');
         markup = OpenLayers.String.format(slideTemplate, slides[i]);
         popup = new OpenLayers.Popup.FramedCloud("slide", slides[i].coords, new OpenLayers.Size(550,550), markup, null, true);
         // add the popup a little later so the panTo operation can finish, because the popup causes more paning
